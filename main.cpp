@@ -24,8 +24,8 @@ int main(int argc, char** argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
   float** array;
-  int r = 4;
-  int c = 4;
+  int r = 100;
+  int c = 100;
   // Receive from the lower process and send to the higher process. Take care
   // of the special case when you are the first process to prevent deadlock.
   if (world_rank != 0) {
