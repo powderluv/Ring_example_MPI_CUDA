@@ -1,1 +1,2 @@
-extern "C" void compute(int N, int* array, int world_rank);
+#pragma once
+extern "C" void compute(int r, int c, float** array, int world_rank);

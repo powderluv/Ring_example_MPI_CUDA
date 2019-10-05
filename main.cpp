@@ -9,8 +9,11 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 
+#include "allocation.hpp"
 #include "host_to_device.hpp"
+#include "timer.hpp"
 
 int main(int argc, char** argv) {
   // Initialize the MPI environment
@@ -21,32 +24,37 @@ int main(int argc, char** argv) {
   int world_size;
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-  int* array;
-  int N = 2;
+  float** array;
+  int r = 100;
+  int c = 100;
   // Receive from the lower process and send to the higher process. Take care
   // of the special case when you are the first process to prevent deadlock.
   if (world_rank != 0) {
-    MPI_Recv(array, N, MPI_INT, world_rank - 1, 0, MPI_COMM_WORLD,
+    array = alloc_2d_init(r, c);
+    MPI_Recv(&(array[0][0]), r*c, MPI_FLOAT, world_rank - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    printf("array is received at rank [%d], array[0] is %d, printing from rank %d's host\n", world_rank, array[0], world_rank);
-    compute(N, array, world_rank);
+    //print_helper(array, r, c);
+    auto time = endTimer();
+    std::cout << "time spend between rank [" << world_rank-1 << "] and [" << world_rank << "] is :"<< time << " seconds \n";
+    compute(r, c, array, world_rank);
   } else {
-
-    array = (int*)malloc(N*sizeof(int)); 
-    for(int i=0; i<N; i++)
-	array[i]=0;
-    printf("array is generated at rank[%d], printing from rank %d's host\n", world_rank, world_rank);
-    compute(N, array, world_rank);
+    array = alloc_2d_init(r, c);
+    data_init(array, r, c);
+    std::cout << "array is generated at rank [" << world_rank << "]'s host.\n";
+    compute(r, c, array, world_rank);
   }
-  MPI_Send(array, N, MPI_INT, (world_rank + 1) % world_size, 0,
+  
+  startTimer();
+  
+  MPI_Send(&(array[0][0]), r*c, MPI_FLOAT, (world_rank + 1) % world_size, 0,
            MPI_COMM_WORLD);
   // Now process 0 can receive from the last process. This makes sure that at
   // least one MPI_Send is initialized before all MPI_Recvs (again, to prevent
   // deadlock)
   if (world_rank == 0) {
-    MPI_Recv(array, N, MPI_INT, world_size - 1, 0, MPI_COMM_WORLD,
+    MPI_Recv(&(array[0][0]), r*c, MPI_FLOAT, world_size - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    printf("array is finally received at rank [%d], array[0] is %d, printing from rank %d's host\n", world_rank, array[0], world_rank);
+    std::cout << "array is finally received at rank [" << world_rank << "]'s host.\n";
   }
   MPI_Finalize();
 }
