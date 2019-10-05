@@ -21,6 +21,30 @@ int** alloc_2d_init(int r, int c)
 	return A;
 }
 
+void data_init(int** A, int r, int c)
+{
+	for(int i=0; i<r; i++)
+	{
+		for(int j=0; j<c; j++)
+		{
+			A[i][j]=i*c+j;
+		}
+	}
+}
+
+void print_helper(int** A, int r, int c)
+{
+	
+	for(int i=0; i<r; i++)
+	{
+		for(int j=0; j<c; j++)
+		{
+			printf("%d, ", A[i][j]);
+		}
+	printf("\n");
+	}
+}
+
 int main(int argc, char** argv) {
   // Initialize the MPI environment
   MPI_Init(NULL, NULL);
@@ -36,13 +60,15 @@ int main(int argc, char** argv) {
   // Receive from the lower process and send to the higher process. Take care
   // of the special case when you are the first process to prevent deadlock.
   if (world_rank != 0) {
+    array = alloc_2d_init(r, c);
     MPI_Recv(&(array[0][0]), r*c, MPI_INT, world_rank - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
+    print_helper(array, r, c);
     printf("array is received at rank [%d], array[1][1] is %d, printing from rank %d's host\n", world_rank, array[1][1], world_rank);
     //compute(N, array, world_rank);
   } else {
     array = alloc_2d_init(r, c);
-    array[1][1]=42;
+    data_init(array, r, c);
     printf("array is generated at rank[%d], printing from rank %d's host\n", world_rank, world_rank);
     //compute(N, array, world_rank);
   }
