@@ -22,14 +22,14 @@ int main(int argc, char** argv) {
   int world_size;
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-  int** array;
+  float** array;
   int r = 4;
   int c = 4;
   // Receive from the lower process and send to the higher process. Take care
   // of the special case when you are the first process to prevent deadlock.
   if (world_rank != 0) {
     array = alloc_2d_init(r, c);
-    MPI_Recv(&(array[0][0]), r*c, MPI_INT, world_rank - 1, 0, MPI_COMM_WORLD,
+    MPI_Recv(&(array[0][0]), r*c, MPI_FLOAT, world_rank - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
     print_helper(array, r, c);
     printf("array is received at rank [%d] printing from rank %d's host\n", world_rank, world_rank);
@@ -40,13 +40,13 @@ int main(int argc, char** argv) {
     printf("array is generated at rank[%d], printing from rank %d's host\n", world_rank, world_rank);
     //compute(N, array, world_rank);
   }
-  MPI_Send(&(array[0][0]), r*c, MPI_INT, (world_rank + 1) % world_size, 0,
+  MPI_Send(&(array[0][0]), r*c, MPI_FLOAT, (world_rank + 1) % world_size, 0,
            MPI_COMM_WORLD);
   // Now process 0 can receive from the last process. This makes sure that at
   // least one MPI_Send is initialized before all MPI_Recvs (again, to prevent
   // deadlock)
   if (world_rank == 0) {
-    MPI_Recv(&(array[0][0]), r*c, MPI_INT, world_size - 1, 0, MPI_COMM_WORLD,
+    MPI_Recv(&(array[0][0]), r*c, MPI_FLOAT, world_size - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
     printf("array is finally received at rank [%d], printing from rank %d's host\n", world_rank, world_rank);
   }
