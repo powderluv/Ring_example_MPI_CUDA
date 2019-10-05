@@ -9,6 +9,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 
 #include "allocation.hpp"
 #include "host_to_device.hpp"
@@ -34,13 +35,12 @@ int main(int argc, char** argv) {
              MPI_STATUS_IGNORE);
     //print_helper(array, r, c);
     auto time = endTimer();
-    printf("time spend between rank %d and %d is :%f\n", world_rank-1, world_rank, time);
-    printf("array is received at rank [%d]'s host.\n", world_rank);
+    std::cout << "time spend between rank [" << world_rank-1 << "] and [" << world_rank << "] is :"<< time << " seconds \n";
     compute(r, c, array, world_rank);
   } else {
     array = alloc_2d_init(r, c);
     data_init(array, r, c);
-    printf("array is generated at rank[%d]'s host.\n", world_rank);
+    std::cout << "array is generated at rank [" << world_rank << "]'s host.\n";
     compute(r, c, array, world_rank);
   }
   
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
   if (world_rank == 0) {
     MPI_Recv(&(array[0][0]), r*c, MPI_FLOAT, world_size - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    printf("array is finally received at rank [%d]'s host.\n", world_rank);
+    std::cout << "array is finally received at rank [" << world_rank << "]'s host.\n";
   }
   MPI_Finalize();
 }
