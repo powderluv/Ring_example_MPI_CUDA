@@ -1,29 +1,33 @@
 #include <stdio.h>
+#include <cassert>
+
 #include <cuda.h>
 #include <cuda_runtime.h>
 
 #include "host_to_device.hpp"
 
 __global__
-void __compute_in_kernel__(int N, int* d_array, int world_rank)
+void __compute_in_kernel__(int r, int c, float* d_array, int world_rank)
 {
   // do some computation on the device
-  for(int i = 0; i<N; i++)
-  	d_array[i] += 1;
-  
-  printf("array is computed at rank[%d], array[0] is %d, printing from rank %d's device\n", world_rank, d_array[0], world_rank);
+  for(int i = 0; i<r*c; i++)
+  {
+	d_array[i] += 1;
+	assert((float)(world_rank+1+i)==d_array[i]);
+  }  
+  printf("Array is computed at rank [%d]'s device.\n", world_rank);
 }
 
-extern "C" void compute(int N, int* array, int world_rank)
+void compute(int r, int c, float** array, int world_rank)
 {
-  int *d_array;
+  float *d_array;
 
-  cudaMalloc(&d_array, N*sizeof(int));
-  cudaMemcpy(d_array, array, N*sizeof(int), cudaMemcpyHostToDevice);
+  cudaMalloc((void **)&d_array, r*c*sizeof(float));
+  cudaMemcpy(d_array, &(array[0][0]), r*c*sizeof(float), cudaMemcpyHostToDevice);
   
-  __compute_in_kernel__<<<1,1>>>(N, d_array, world_rank);
+  __compute_in_kernel__<<<1,1>>>(r, c, d_array, world_rank);
 
-  cudaMemcpy(array, d_array, N*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(&(array[0][0]), d_array, r*c*sizeof(float), cudaMemcpyDeviceToHost);
 
 }
 

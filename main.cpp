@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//#include "host_to_device.hpp"
+#include "host_to_device.hpp"
 #include "allocation.hpp"
 
 int main(int argc, char** argv) {
@@ -31,14 +31,14 @@ int main(int argc, char** argv) {
     array = alloc_2d_init(r, c);
     MPI_Recv(&(array[0][0]), r*c, MPI_FLOAT, world_rank - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    print_helper(array, r, c);
-    printf("array is received at rank [%d] printing from rank %d's host\n", world_rank, world_rank);
-    //compute(N, array, world_rank);
+    //print_helper(array, r, c);
+    printf("array is received at rank [%d]'s host.\n", world_rank);
+    compute(r, c, array, world_rank);
   } else {
     array = alloc_2d_init(r, c);
     data_init(array, r, c);
-    printf("array is generated at rank[%d], printing from rank %d's host\n", world_rank, world_rank);
-    //compute(N, array, world_rank);
+    printf("array is generated at rank[%d]'s host.\n", world_rank);
+    compute(r, c, array, world_rank);
   }
   MPI_Send(&(array[0][0]), r*c, MPI_FLOAT, (world_rank + 1) % world_size, 0,
            MPI_COMM_WORLD);
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   if (world_rank == 0) {
     MPI_Recv(&(array[0][0]), r*c, MPI_FLOAT, world_size - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    printf("array is finally received at rank [%d], printing from rank %d's host\n", world_rank, world_rank);
+    printf("array is finally received at rank [%d]'s host.\n", world_rank);
   }
   MPI_Finalize();
 }
