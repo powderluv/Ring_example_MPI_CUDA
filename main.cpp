@@ -10,8 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "host_to_device.hpp"
 #include "allocation.hpp"
+#include "host_to_device.hpp"
+#include "timer.hpp"
 
 int main(int argc, char** argv) {
   // Initialize the MPI environment
@@ -32,6 +33,8 @@ int main(int argc, char** argv) {
     MPI_Recv(&(array[0][0]), r*c, MPI_FLOAT, world_rank - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
     //print_helper(array, r, c);
+    auto time = endTimer();
+    printf("time spend between rank %d and %d is :%f\n", world_rank-1, world_rank, time);
     printf("array is received at rank [%d]'s host.\n", world_rank);
     compute(r, c, array, world_rank);
   } else {
@@ -40,6 +43,9 @@ int main(int argc, char** argv) {
     printf("array is generated at rank[%d]'s host.\n", world_rank);
     compute(r, c, array, world_rank);
   }
+  
+  startTimer();
+  
   MPI_Send(&(array[0][0]), r*c, MPI_FLOAT, (world_rank + 1) % world_size, 0,
            MPI_COMM_WORLD);
   // Now process 0 can receive from the last process. This makes sure that at
