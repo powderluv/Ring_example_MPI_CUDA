@@ -11,39 +11,7 @@
 #include <stdlib.h>
 
 //#include "host_to_device.hpp"
-
-int** alloc_2d_init(int r, int c)
-{
-	int** A = new int*[r];
-	A[0] = new  int[r*c];
-	for (int i = 1; i < r; ++i) 
-		A[i] = A[i-1] + c;
-	return A;
-}
-
-void data_init(int** A, int r, int c)
-{
-	for(int i=0; i<r; i++)
-	{
-		for(int j=0; j<c; j++)
-		{
-			A[i][j]=i*c+j;
-		}
-	}
-}
-
-void print_helper(int** A, int r, int c)
-{
-	
-	for(int i=0; i<r; i++)
-	{
-		for(int j=0; j<c; j++)
-		{
-			printf("%d, ", A[i][j]);
-		}
-	printf("\n");
-	}
-}
+#include "allocation.hpp"
 
 int main(int argc, char** argv) {
   // Initialize the MPI environment
@@ -64,7 +32,7 @@ int main(int argc, char** argv) {
     MPI_Recv(&(array[0][0]), r*c, MPI_INT, world_rank - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
     print_helper(array, r, c);
-    printf("array is received at rank [%d], array[1][1] is %d, printing from rank %d's host\n", world_rank, array[1][1], world_rank);
+    printf("array is received at rank [%d] printing from rank %d's host\n", world_rank, world_rank);
     //compute(N, array, world_rank);
   } else {
     array = alloc_2d_init(r, c);
@@ -80,7 +48,7 @@ int main(int argc, char** argv) {
   if (world_rank == 0) {
     MPI_Recv(&(array[0][0]), r*c, MPI_INT, world_size - 1, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    printf("array is finally received at rank [%d], array[1][1] is %d, printing from rank %d's host\n", world_rank, array[1][1], world_rank);
+    printf("array is finally received at rank [%d], printing from rank %d's host\n", world_rank, world_rank);
   }
   MPI_Finalize();
 }
