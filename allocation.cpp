@@ -20,15 +20,12 @@ void data_init(float** A, int r, int c)
 	}
 }
 
-void print_helper(float** A, int r, int c)
+void print_helper(float* A, int r, int c)
 {
 	
-	for(int i=0; i<r; i++)
-	{
-		for(int j=0; j<c; j++)
+		for(int i =0; i<r*c; i++)
 		{
-			printf("%f, ", A[i][j]);
+			printf("%f, ", A[i]);
 		}
 	printf("\n");
-	}
 }
