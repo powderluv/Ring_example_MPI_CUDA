@@ -1,9 +1,9 @@
 #pragma once
 extern "C" void compute(int r, int c, float** array, int world_rank);
 
-extern "C" void d2d_alloc(int r, int c, char** buff);
+extern "C" void alloc_d(size_t N, float** buff);
 
-extern "C" void d2d_memset(int r, int c, void* buff);
+extern "C" void init_d(size_t N, float* buff);
 
-extern "C" void d2d_compute(int r, int c, char* d_array);
+extern "C" void compute_d(size_t N, float* d_array, int world_rank);
 

@@ -24,22 +24,30 @@ int main(int argc, char** argv) {
   int world_size;
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-  char* s_array;
-  char* r_array;
-  int r = 4;
-  int c = 4;
-  d2d_alloc(r, c, &s_array);
-  d2d_alloc(r, c, &r_array);
+  float* s_array;
+  float* r_array;
+  size_t N=4;
+  alloc_d(N, &s_array);
+  alloc_d(N, &r_array);
   // Receive from the lower process and send to the higher process. Take care
   // of the special case when you are the first process to prevent deadlock.
   if (world_rank != 0) {
-    MPI_Recv(r_array, r*c, MPI_CHAR, world_rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    d2d_compute(r, c, r_array);
+    MPI_Recv(r_array, N, MPI_FLOAT, world_rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    compute_d(N, r_array, world_rank);
 
   } else {
-    d2d_memset(r,c, s_array);
-    MPI_Send(s_array, r*c, MPI_CHAR, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
+    init_d(N, s_array);
   }
-  
+
+  if (world_rank == 0) {
+      MPI_Send(s_array, N, MPI_FLOAT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
+  } else {
+      MPI_Send(r_array, N, MPI_FLOAT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
+  }
+
+  if (world_rank == 0) {
+    MPI_Recv(r_array, N, MPI_FLOAT, world_size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  }
+
   MPI_Finalize();
 }

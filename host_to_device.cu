@@ -11,27 +11,37 @@
 typedef std::chrono::high_resolution_clock Clock;
 
 __global__
-void __compute_in_kernel__(int r, int c, char* d_array, int world_rank)
+void __compute_in_kernel__(size_t N, float* d_array, int world_rank)
 {
   // do some computation on the device
-  for(int i = 0; i<r*c; i++)
+  for(int i = 0; i<N; i++)
   {
-	printf("%d, ", d_array[i]);
-  }  
-	printf("\n");
+      d_array[i] += 1;
+	printf("%f, ", d_array[i]);
+  }
+	printf("\nrank: %d \n", world_rank);
 }
 
-void d2d_alloc(int r, int c, char** buff)
+__global__
+void __init_in_kernel__(size_t N, float* d_array)
 {
-	cudaMalloc((void**)buff, (size_t)(r*c));
+    for(int i = 0; i<N; i++)
+    {
+        d_array[i] = 42.0;
+    }
 }
 
-void d2d_memset(int r, int c, void* buff)
+void alloc_d(size_t N, float** buff)
 {
-	  cudaMemset(buff, 'b', r*c);
+	cudaMalloc((void**)buff, N * sizeof(float));
 }
 
-void d2d_compute(int r, int c, char* buff)
+void init_d(size_t N, float* buff)
 {
-	  __compute_in_kernel__<<<1,1>>>(r, c, buff, 1);
+    __init_in_kernel__<<<1,1>>>(N, buff);
+}
+
+void compute_d(size_t N, float* buff, int world_rank)
+{
+	  __compute_in_kernel__<<<1,1>>>(N, buff, world_rank);
 }
