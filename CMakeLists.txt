@@ -23,10 +23,15 @@ list(APPEND CUDA_NVCC_FLAGS
       -Xcompiler -Wno-unused-parameter
       -Xcompiler -Wno-switch)
 
-CUDA_ADD_LIBRARY(host_to_device host_to_device.cu)
+CUDA_ADD_LIBRARY(host_to_device SHARED host_to_device.cu)
 
-add_executable(gpuDirect gpuDirect allocation.cpp allocation.hpp)
+add_executable(gpuDirect gpuDirect.cpp allocation.cpp allocation.hpp)
 target_include_directories(gpuDirect PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 
 target_link_libraries(gpuDirect PRIVATE host_to_device)
+
+add_executable(up_n_down up_n_down.cpp allocation.hpp)
+target_include_directories(up_n_down PRIVATE ${CUDA_TOOLKIT_INCLUDE})
+
+target_link_libraries(up_n_down PRIVATE host_to_device)
 

@@ -1,10 +1,14 @@
 #include <assert.h>
 #include <vector>
 #include <fstream>
-#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+
+#include <mpi.h>
+
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #include "allocation.hpp"
 #include "host_to_device.hpp"
@@ -23,8 +27,11 @@ int main(int argc, char **argv) {
 
     const int times = 100;
 
-    char* s_array;
-    char* r_array;
+    char* s_d_array;
+    char* r_d_array;
+
+    char* s_h_array;
+    char* r_h_array;
 
     std::vector<char> msg;
     std::ofstream out("gpuDirect_ping_pong_timings.txt");
@@ -36,19 +43,27 @@ int main(int argc, char **argv) {
     }
 
     for (long long size : std::vector<long long>{1, 2, 10, 100, 1000, 1000000, 100000000, 1000000000}) {
-        alloc_d(size, &s_array);
-        init_d(size, s_array, 'a');
-        alloc_d(size, &r_array);
+        alloc_d(size, &s_d_array);
+        init_d(size, s_d_array, 'a');
+        alloc_d(size, &r_d_array);
+
+        s_h_array = (char*) malloc(size * sizeof(char));
+        r_h_array = (char*) malloc(size * sizeof(char));
 
         bool ping = 0;
         startTimer();
         for (int i = 0; i < times; ++i) {
             if (rank == ping)
-                MPI_Send(s_array, size, MPI_CHAR, !ping, 0, MPI_COMM_WORLD);
+            {
+                cudaMemcpy(s_h_array, s_d_array, size, cudaMemcpyDeviceToHost);
+                MPI_Send(s_h_array, size, MPI_CHAR, !ping, 0, MPI_COMM_WORLD);
+            }
             else
-                MPI_Recv(r_array, size, MPI_CHAR, ping, 0, MPI_COMM_WORLD,
+            {
+                MPI_Recv(r_h_array, size, MPI_CHAR, ping, 0, MPI_COMM_WORLD,
                          MPI_STATUS_IGNORE);
-
+                cudaMemcpy(r_d_array, r_h_array, size, cudaMemcpyHostToDevice);
+            }
             ping = !ping;
         }
         auto time = endTimer() / times;
@@ -58,8 +73,10 @@ int main(int argc, char **argv) {
             std::cout << size << "\t" << time << "\t" << size / time * 1e-9 << "\n";
         }
 
-        free_d(s_array);
-        free_d(r_array);
+        free_d(s_d_array);
+        free_d(r_d_array);
+        free(s_h_array);
+        free(r_h_array);
     }
 
     MPI_Finalize();
