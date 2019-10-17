@@ -31,9 +31,14 @@ void __init_in_kernel__(size_t N, float* d_array)
     }
 }
 
-void alloc_d(size_t N, float** buff)
+void alloc_d(long long N, char** buff)
 {
-	cudaMalloc((void**)buff, N * sizeof(float));
+	cudaMalloc((void**)buff, N * sizeof(char));
+}
+
+void free_d(long long N, char* buff)
+{
+    cudaFree(buff);
 }
 
 void init_d(size_t N, float* buff)

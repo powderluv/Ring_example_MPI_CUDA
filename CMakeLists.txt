@@ -25,8 +25,8 @@ list(APPEND CUDA_NVCC_FLAGS
 
 CUDA_ADD_LIBRARY(host_to_device host_to_device.cu)
 
-add_executable(main main.cpp allocation.cpp allocation.hpp) 
-target_include_directories(main PRIVATE ${CUDA_TOOLKIT_INCLUDE}) 
+add_executable(gpuDirect gpuDirect allocation.cpp allocation.hpp)
+target_include_directories(gpuDirect PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 
-target_link_libraries(main PRIVATE host_to_device)
+target_link_libraries(gpuDirect PRIVATE host_to_device)
 
