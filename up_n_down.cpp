@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
         out << "Size \t time per iter \t bandwitdth [GB/s] \n";
     }
 
-    for (long long size : std::vector<long long>{1, 2, 10, 100, 1000, 1000000, 100000000, 1000000000}) {
+    for (long long size : std::vector<long long>{1, 2, 10, 100, 1000, 1000000, 30000000, 100000000, 1000000000}) {
         alloc_d(size, &s_d_array);
         init_d(size, s_d_array, 'a');
         alloc_d(size, &r_d_array);

@@ -35,3 +35,7 @@ target_include_directories(up_n_down PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 
 target_link_libraries(up_n_down PRIVATE host_to_device)
 
+add_executable(cuda_device_list cuda_device_list.cpp)
+target_include_directories(cuda_device_list PRIVATE ${CUDA_TOOLKIT_INCLUDE})
+#find_package(CUDALibs)
+target_link_libraries(cuda_device_list ${CUDA_LIBRARIES})
