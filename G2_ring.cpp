@@ -51,32 +51,31 @@ int main(int argc, char **argv) {
 
     while(iter < mpi_size) {
         // probe any available incoming G2
-        while (flag == 0) {
-            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-        }
+        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
 
         // we found one available G2 from left neighbor, let's place it into corresponding buffer position
         if (flag) {
             // birth rank (tag) <-> position of sequence buffer
             MPI_Recv(G2s[status.MPI_TAG], n_elems, MPI_FLOAT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
             std::cout << "Rank " << rank << " received G2 [ " << status.MPI_TAG << " ] from rank " << status.MPI_SOURCE << "\n";
+
             flag = 0;
-        }
 
-        if(status.MPI_TAG != rank)
-        {
-            std::cout << "Rank " << rank << " is sending G2 [ " << status.MPI_TAG << " ] to rank " << (rank + 1) % mpi_size << "\n";
-            // forward G2 to my right neighbor using non-blocking Isend
-            MPI_Isend(G2s[status.MPI_TAG], 1, MPI_FLOAT, (rank + 1) % mpi_size, status.MPI_TAG, MPI_COMM_WORLD, &request);
-        }
-        else
-        {
-            std::cout << "Rank " << rank << " will not send G2 [ " << status.MPI_TAG << " ] to anywhere! \n";
-            // this G2 was originally from me, it has travel around the ring and can be retired
-            // do nothing
-        }
+            iter++;
 
-        iter++;
+            if(status.MPI_TAG != rank)
+            {
+                std::cout << "Rank " << rank << " is sending G2 [ " << status.MPI_TAG << " ] to rank " << (rank + 1) % mpi_size << "\n";
+                // forward G2 to my right neighbor using non-blocking Isend
+                MPI_Isend(G2s[status.MPI_TAG], 1, MPI_FLOAT, (rank + 1) % mpi_size, status.MPI_TAG, MPI_COMM_WORLD, &request);
+            }
+            else
+            {
+                std::cout << "Rank " << rank << " will not send G2 [ " << status.MPI_TAG << " ] to anywhere! \n";
+                // this G2 was originally from me, it has travel around the ring and can be retired
+                // do nothing
+            }
+        }
     }
 
     for(int i = 0; i < mpi_size; i++)
