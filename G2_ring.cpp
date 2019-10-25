@@ -40,16 +40,16 @@ int main(int argc, char **argv) {
     MPI_Request request;
 
     int iter = 0;
+
+    // do once at the beginning, sent local G2 to right neighbour
+    if (!sent) {
+        // each G2 is tagged with its birth rank
+        MPI_Isend(G2s[rank], n_elems, MPI_FLOAT, (rank + 1) % mpi_size, rank, MPI_COMM_WORLD, &request);
+        std::cout << "Rank " << rank << " sent its G2!" << "\n";
+        sent = true;
+    }
+
     while(iter < mpi_size) {
-
-        // do once at the beginning, sent local G2 to right neighbour
-        if (!sent) {
-            // each G2 is tagged with its birth rank
-            MPI_Isend(G2s[rank], n_elems, MPI_FLOAT, (rank + 1) % mpi_size, rank, MPI_COMM_WORLD, &request);
-            std::cout << "Rank " << rank << " sent its G2!" << "\n";
-            sent = true;
-        }
-
         // probe any available incoming G2
         while (flag == 0) {
             MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
