@@ -25,6 +25,11 @@ void alloc_d(long long N, float ** buff)
 	cudaMalloc((void**)buff, N * sizeof(float));
 }
 
+void alloc_d_char(long long N, char ** buff)
+{
+    cudaMalloc((void**)buff, N * sizeof(char));
+}
+
 void free_d(char* buff)
 {
     cudaFree(buff);
