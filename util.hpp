@@ -1,5 +1,7 @@
 #pragma once
-extern "C" void alloc_d(long long N, char** buff);
+extern "C" void alloc_d(long long N, float** buff);
+
+extern "C" void alloc_d_char(long long N, char** buff);
 
 extern "C" void free_d(char* buff);
 

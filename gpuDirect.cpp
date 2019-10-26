@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "allocation.hpp"
-#include "host_to_device.hpp"
+#include "util.hpp"
 #include "timer.hpp"
 
 int main(int argc, char **argv) {
@@ -36,9 +36,9 @@ int main(int argc, char **argv) {
     }
 
     for (long long size : std::vector<long long>{1, 2, 10, 100, 1000, 1000000, 30000000, 100000000, 1000000000}) {
-        alloc_d(size, &s_array);
+        alloc_d_char(size, &s_array);
         init_d(size, s_array, 'a');
-        alloc_d(size, &r_array);
+        alloc_d_char(size, &r_array);
 
         bool ping = 0;
         startTimer();

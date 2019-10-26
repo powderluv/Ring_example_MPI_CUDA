@@ -6,7 +6,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "host_to_device.hpp"
+#include "util.hpp"
 
 typedef std::chrono::high_resolution_clock Clock;
 
@@ -20,9 +20,14 @@ void __init_in_kernel__(long long N, char* d_array, char c)
   }
 }
 
-void alloc_d(long long N, char** buff)
+void alloc_d(long long N, float ** buff)
 {
-	cudaMalloc((void**)buff, N * sizeof(char));
+	cudaMalloc((void**)buff, N * sizeof(float));
+}
+
+void alloc_d_char(long long N, char ** buff)
+{
+    cudaMalloc((void**)buff, N * sizeof(char));
 }
 
 void free_d(char* buff)
