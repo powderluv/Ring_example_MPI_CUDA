@@ -15,8 +15,6 @@ void generateG2(float* G2){}
 
 void update_local_G4(float* G2){}
 
-void copy_d(float* origin, float* copy) {}
-
 int main(int argc, char **argv) {
     MPI_CHECK(MPI_Init(&argc, &argv));
     int rank, mpi_size;
@@ -37,7 +35,7 @@ int main(int argc, char **argv) {
     int niter = 10;
 
     // each G2 say has 4 elements
-    int n_elems = 4;
+    size_t n_elems = 4;
     float* G2 = nullptr;
     float* sendbuff_G2 = nullptr;
     float* recvbuff_G2 = nullptr;
@@ -53,7 +51,7 @@ int main(int argc, char **argv) {
         generateG2(G2);
         update_local_G4(G2);
         // get ready for send
-        copy_d(G2, sendbuff_G2); // copy into buffer
+        CudaMemoryCopy(sendbuff_G2, G2, n_elems);
         int send_tag = 1 + rank;
         send_tag = 1 + MOD(send_tag-1, MPI_TAG_UB); // just to be safe, MPI_TAG_UB is largest tag value
 
@@ -79,12 +77,12 @@ int main(int argc, char **argv) {
             MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, send_tag, MPI_COMM_WORLD, &send_request));
 
             MPI_CHECK(MPI_Wait(&recv_request, &status));
-            //G2 = recvbuff_G2; // copy from buffer
+            CudaMemoryCopy(G2, recvbuff_G2, n_elems);
             update_local_G4(G2);
             MPI_CHECK(MPI_Wait(&send_request, &status)); // wait for sendbuf_G2 to be available again
 
             // get ready for send
-            //sendbuff_G2 = G2;
+            CudaMemoryCopy(G2, sendbuff_G2, n_elems);
             send_tag = recv_tag;
         }
 

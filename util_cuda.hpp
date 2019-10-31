@@ -28,3 +28,11 @@ T* allocate_on_device(std::size_t n) {
     return ptr;
 }
 
+template <typename T>
+void CudaMemoryCopy(T* dest, T* src, size_t size) {
+    cudaError_t ret = cudaMemcpy(dest, src, size * sizeof(T), cudaMemcpyDeviceToDevice);
+    if (ret != cudaSuccess) {
+        printErrorMessage(std::string(cudaGetErrorString(ret)), __FUNCTION__, __FILE__, __LINE__, "\t cuda mem copy failed " );
+        throw std::logic_error(__FUNCTION__);
+    }
+}
