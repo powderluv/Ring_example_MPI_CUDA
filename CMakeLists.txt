@@ -23,15 +23,15 @@ list(APPEND CUDA_NVCC_FLAGS
       -Xcompiler -Wno-unused-parameter
       -Xcompiler -Wno-switch)
 
-CUDA_ADD_LIBRARY(util SHARED util.cu)
+CUDA_ADD_LIBRARY(util_cuda SHARED util_cuda.cu)
 
 add_executable(gpuDirect gpuDirect.cpp allocation.cpp allocation.hpp)
 target_include_directories(gpuDirect PRIVATE ${CUDA_TOOLKIT_INCLUDE})
-target_link_libraries(gpuDirect PRIVATE util)
+target_link_libraries(gpuDirect PRIVATE util_cuda)
 
 add_executable(up_n_down up_n_down.cpp allocation.hpp util_mpi.hpp)
 target_include_directories(up_n_down PRIVATE ${CUDA_TOOLKIT_INCLUDE})
-target_link_libraries(up_n_down PRIVATE util)
+target_link_libraries(up_n_down PRIVATE util_cuda)
 
 add_executable(cuda_device_list cuda_device_list.cpp util_mpi.hpp)
 target_include_directories(cuda_device_list PRIVATE ${CUDA_TOOLKIT_INCLUDE})
@@ -39,4 +39,4 @@ target_link_libraries(cuda_device_list ${CUDA_LIBRARIES})
 
 add_executable(G2_ring G2_ring.cpp util_mpi.hpp)
 target_include_directories(G2_ring PRIVATE ${CUDA_TOOLKIT_INCLUDE})
-target_link_libraries(G2_ring PRIVATE util)
+target_link_libraries(G2_ring PRIVATE util_cuda)

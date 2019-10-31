@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 
-#include "util.hpp"
+#include "util_cuda.hpp"
 #include "util_mpi.hpp"
 
 #define MOD(x,n) ((x) % (n))
@@ -33,13 +33,13 @@ int main(int argc, char **argv) {
 
     // each G2 say has 4 elements
     int n_elems = 4;
-    float* G2;
-    float* sendbuff_G2;
-    float* recvbuff_G2;
-    alloc_d(n_elems, &G2);
-    alloc_d(n_elems, &sendbuff_G2);
-    alloc_d(n_elems, &recvbuff_G2);
+    float* G2 = nullptr;
+    float* sendbuff_G2 = nullptr;
+    float* recvbuff_G2 = nullptr;
 
+    G2 = allocate_on_device<float>(n_elems);
+    sendbuff_G2 = allocate_on_device<float>(n_elems);
+    recvbuff_G2 = allocate_on_device<float>(n_elems);
 
     for(int i = 0; i < niter; i++)
     {

@@ -1,12 +1,10 @@
+#include "util.hpp"
+
 #include <chrono>
 #include <stdio.h>
 #include <cassert>
 #include <iostream>
-
-#include <cuda.h>
-#include <cuda_runtime.h>
-
-#include "util.hpp"
+#include <sstream>
 
 typedef std::chrono::high_resolution_clock Clock;
 
@@ -38,4 +36,17 @@ void free_d(char* buff)
 void init_d(long long N, char* buff, char c)
 {
     __init_in_kernel__<<<1,1>>>(N, buff, c);
+}
+
+void printErrorMessage(std::string error, std::string function_name, std::string file_name,
+                       int line, std::string extra_error_string) {
+    std::stringstream s;
+
+    s << "Error in function: " << function_name;
+    s << " (" << file_name << ":" << line << ")" << std::endl;
+    s << "The function returned: " << error << std::endl;
+    if (extra_error_string != "")
+        s << extra_error_string << std::endl;
+
+    std::cout << s.str() << std::endl;
 }

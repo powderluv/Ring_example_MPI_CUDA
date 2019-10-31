@@ -8,7 +8,7 @@
 
 #include "allocation.hpp"
 #include "timer.hpp"
-#include "util.hpp"
+#include "util_cuda.hpp"
 #include "util_mpi.hpp"
 
 
