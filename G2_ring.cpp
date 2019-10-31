@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
         if (rank == 0)
         {
             start_time = MPI_Wtime();
+            printf("start_time: %lf in iteration %d \n", start_time, i);
         }
 
         for(int icount=0; icount < (mpi_size-1); icount++)
@@ -67,12 +68,12 @@ int main(int argc, char **argv) {
             int recv_tag = 1 + originator_irank;
             recv_tag = 1 + MOD(recv_tag-1, MPI_TAG_UB); // just to be safe, then 1 <= tag <= MPI_TAG_UB
 #ifdef PRINT_DEBUG_INFO
-            printf("rank %d receive G2 [%d] from rank %d \n", rank, recv_tag, left_neighbor);
+            printf("rank %d receive G2 [%d] from rank %d in iteration %d \n", rank, recv_tag, left_neighbor, i);
 #endif
             MPI_CHECK(MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, recv_tag, MPI_COMM_WORLD, &recv_request));
 
 #ifdef PRINT_DEBUG_INFO
-            printf("rank %d send G2 [%d] to rank %d \n", rank, send_tag, right_neighbor);
+            printf("rank %d send G2 [%d] to rank %d  in iteration %d \n", rank, send_tag, right_neighbor, i);
 #endif
             MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, send_tag, MPI_COMM_WORLD, &send_request));
 
@@ -89,7 +90,8 @@ int main(int argc, char **argv) {
         if (rank == 0)
         {
             end_time = MPI_Wtime();
-            printf("G2 has traveled across the world, time spent: %f \n", end_time - start_time);
+            printf("end_time: %lf in iteration %d \n", end_time, i);
+            printf("G2 has traveled across the world, time spent: %lf in iteration %d \n", end_time - start_time, i);
         }
     }
 
