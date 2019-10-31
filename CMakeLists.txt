@@ -29,14 +29,14 @@ add_executable(gpuDirect gpuDirect.cpp allocation.cpp allocation.hpp)
 target_include_directories(gpuDirect PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 target_link_libraries(gpuDirect PRIVATE util)
 
-add_executable(up_n_down up_n_down.cpp allocation.hpp)
+add_executable(up_n_down up_n_down.cpp allocation.hpp util_mpi.hpp)
 target_include_directories(up_n_down PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 target_link_libraries(up_n_down PRIVATE util)
 
-add_executable(cuda_device_list cuda_device_list.cpp)
+add_executable(cuda_device_list cuda_device_list.cpp util_mpi.hpp)
 target_include_directories(cuda_device_list PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 target_link_libraries(cuda_device_list ${CUDA_LIBRARIES})
 
-add_executable(G2_ring G2_ring.cpp)
+add_executable(G2_ring G2_ring.cpp util_mpi.hpp)
 target_include_directories(G2_ring PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 target_link_libraries(G2_ring PRIVATE util)

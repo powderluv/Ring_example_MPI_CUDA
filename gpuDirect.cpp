@@ -7,17 +7,19 @@
 #include <iostream>
 
 #include "allocation.hpp"
-#include "util.hpp"
 #include "timer.hpp"
+#include "util.hpp"
+#include "util_mpi.hpp"
+
 
 int main(int argc, char **argv) {
-    MPI_Init(&argc, &argv);
+    MPI_CHECK(MPI_Init(&argc, &argv));
     int rank, mpi_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
+    MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
     if (mpi_size != 2) {
         std::cout << "Run with two ranks.";
-        MPI_Abort(MPI_COMM_WORLD, -1);
+        MPI_CHECK(MPI_Abort(MPI_COMM_WORLD, -1));
         exit(-1);
     }
 
@@ -44,10 +46,10 @@ int main(int argc, char **argv) {
         startTimer();
         for (int i = 0; i < times; ++i) {
             if (rank == ping)
-                MPI_Send(s_array, size, MPI_CHAR, !ping, 0, MPI_COMM_WORLD);
+                MPI_CHECK(MPI_Send(s_array, size, MPI_CHAR, !ping, 0, MPI_COMM_WORLD));
             else
-                MPI_Recv(r_array, size, MPI_CHAR, ping, 0, MPI_COMM_WORLD,
-                         MPI_STATUS_IGNORE);
+                MPI_CHECK(MPI_Recv(r_array, size, MPI_CHAR, ping, 0, MPI_COMM_WORLD,
+                         MPI_STATUS_IGNORE));
 
             ping = !ping;
         }
@@ -62,5 +64,5 @@ int main(int argc, char **argv) {
         free_d(r_array);
     }
 
-    MPI_Finalize();
+    MPI_CHECK(MPI_Finalize());
 }
