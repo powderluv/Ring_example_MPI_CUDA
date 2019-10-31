@@ -48,14 +48,14 @@ int main(int argc, char **argv) {
         // get ready for send
         copy_d(G2, sendbuff_G2); // copy into buffer
         int send_tag = 1 + rank;
-        send_tag = MOD(send_tag-1, MPI_TAG_UB); // just to be safe, MPI_TAG_UB is largest tag value
+        send_tag = 1 + MOD(send_tag-1, MPI_TAG_UB); // just to be safe, MPI_TAG_UB is largest tag value
 
         for(int icount=0; icount < (mpi_size-1); icount++)
         {
             // encode the originator rank in the message tag as tag = 1 + originator_irank
             int originator_irank = MOD(((rank-1)-icount + 2*mpi_size), mpi_size);
             int recv_tag = 1 + originator_irank;
-            recv_tag = MOD(recv_tag-1, MPI_TAG_UB); // just to be safe, then 1 <= tag <= MPI_TAG_UB
+            recv_tag = 1 + MOD(recv_tag-1, MPI_TAG_UB); // just to be safe, then 1 <= tag <= MPI_TAG_UB
 
             printf("rank %d receive G2 [%d] from rank %d \n", rank, recv_tag, left_neighbor);
             MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, recv_tag, MPI_COMM_WORLD, &recv_request);
