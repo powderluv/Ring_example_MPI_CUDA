@@ -22,6 +22,10 @@ int main(int argc, char **argv) {
     int rank, mpi_size;
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
     MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
+
+    // sync all processors at the beginning
+    MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
+
     MPI_Request recv_request;
     MPI_Request send_request;
     MPI_Status status;
@@ -29,7 +33,8 @@ int main(int argc, char **argv) {
     int left_neighbor = MOD((rank-1 + mpi_size), mpi_size);
     int right_neighbor = MOD((rank+1 + mpi_size), mpi_size);
 
-    int niter = 1;
+    // number of G2s
+    int niter = 10;
 
     // each G2 say has 4 elements
     int n_elems = 4;
@@ -41,6 +46,7 @@ int main(int argc, char **argv) {
     sendbuff_G2 = allocate_on_device<float>(n_elems);
     recvbuff_G2 = allocate_on_device<float>(n_elems);
 
+    double start_time, end_time;
     for(int i = 0; i < niter; i++)
     {
         // generate G2 and fill some value in
@@ -51,28 +57,46 @@ int main(int argc, char **argv) {
         int send_tag = 1 + rank;
         send_tag = 1 + MOD(send_tag-1, MPI_TAG_UB); // just to be safe, MPI_TAG_UB is largest tag value
 
+        if (rank == 0)
+        {
+            start_time = MPI_Wtime();
+        }
+
         for(int icount=0; icount < (mpi_size-1); icount++)
         {
             // encode the originator rank in the message tag as tag = 1 + originator_irank
             int originator_irank = MOD(((rank-1)-icount + 2*mpi_size), mpi_size);
             int recv_tag = 1 + originator_irank;
             recv_tag = 1 + MOD(recv_tag-1, MPI_TAG_UB); // just to be safe, then 1 <= tag <= MPI_TAG_UB
-
+#ifdef PRINT_DEBUG_INFO
             printf("rank %d receive G2 [%d] from rank %d \n", rank, recv_tag, left_neighbor);
+#endif
             MPI_CHECK(MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, recv_tag, MPI_COMM_WORLD, &recv_request));
 
+#ifdef PRINT_DEBUG_INFO
             printf("rank %d send G2 [%d] to rank %d \n", rank, send_tag, right_neighbor);
+#endif
             MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, send_tag, MPI_COMM_WORLD, &send_request));
 
             MPI_CHECK(MPI_Wait(&recv_request, &status));
-            //G2 = recvbuf_G2; // copy from buffer
+            //G2 = recvbuff_G2; // copy from buffer
             update_local_G4(G2);
             MPI_CHECK(MPI_Wait(&send_request, &status)); // wait for sendbuf_G2 to be available again
 
             // get ready for send
-            //sendbuf_G2 = G2;
+            //sendbuff_G2 = G2;
             send_tag = recv_tag;
         }
+
+        if (rank == 0)
+        {
+            end_time = MPI_Wtime();
+            printf("G2 has traveled across the world, time spent: %f \n", end_time - start_time);
+        }
     }
+
+    // sync all processors at the end
+    MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
+
     MPI_CHECK(MPI_Finalize());
 }
