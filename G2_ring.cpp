@@ -34,8 +34,7 @@ int main(int argc, char **argv) {
     // number of G2s
     int niter = 10;
 
-    // each G2 say has 4 elements
-    size_t n_elems = 4;
+    size_t n_elems = 8000000;
     float* G2 = nullptr;
     float* sendbuff_G2 = nullptr;
     float* recvbuff_G2 = nullptr;
