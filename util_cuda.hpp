@@ -14,6 +14,12 @@ extern "C" void init_d(long long N, char* buff, char c);
 void printErrorMessage(std::string error, std::string function_name, std::string file_name,
                        int line, std::string extra_error_string = "");
 
+void generateG2(float* G2, int rank, size_t n_elems);
+
+void update_local_G4(float* G2, float* G4, int rank, size_t n_elems);
+
+void print_helper(float* G4, int index);
+
 template<typename T>
 T* allocate_on_device(std::size_t n) {
     if (n == 0)
