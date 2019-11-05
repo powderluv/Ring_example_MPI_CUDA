@@ -60,8 +60,9 @@ void __update_local_G4_in_kernel__ (float* G2, float* G4, int rank, size_t n_ele
 
 void generateG2(float* G2, int rank, size_t n_elems)
 {
-    int n_blocks = n_elems / 512;
-    __generateG2_in_kernel__<<<n_blocks,512>>>(G2, rank, n_elems);
+    const int n_threads = 512;
+    const int n_blocks = (n_elems + (n_threads-1))/ n_threads;
+    __generateG2_in_kernel__<<<n_blocks,n_threads>>>(G2, rank, n_elems);
     return;
 }
 
