@@ -11,17 +11,18 @@
 #include <cuda_runtime.h>
 
 #include "allocation.hpp"
-#include "util.hpp"
 #include "timer.hpp"
+#include "util_cuda.hpp"
+#include "util_mpi.hpp"
 
 int main(int argc, char **argv) {
-    MPI_Init(&argc, &argv);
+    MPI_CHECK(MPI_Init(&argc, &argv));
     int rank, mpi_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
+    MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
     if (mpi_size != 2) {
         std::cout << "Run with two ranks.";
-        MPI_Abort(MPI_COMM_WORLD, -1);
+        MPI_CHECK(MPI_Abort(MPI_COMM_WORLD, -1));
         exit(-1);
     }
 
@@ -56,12 +57,12 @@ int main(int argc, char **argv) {
             if (rank == ping)
             {
                 cudaMemcpy(s_h_array, s_d_array, size, cudaMemcpyDeviceToHost);
-                MPI_Send(s_h_array, size, MPI_CHAR, !ping, 0, MPI_COMM_WORLD);
+                MPI_CHECK(MPI_Send(s_h_array, size, MPI_CHAR, !ping, 0, MPI_COMM_WORLD));
             }
             else
             {
-                MPI_Recv(r_h_array, size, MPI_CHAR, ping, 0, MPI_COMM_WORLD,
-                         MPI_STATUS_IGNORE);
+                MPI_CHECK(MPI_Recv(r_h_array, size, MPI_CHAR, ping, 0, MPI_COMM_WORLD,
+                         MPI_STATUS_IGNORE));
                 cudaMemcpy(r_d_array, r_h_array, size, cudaMemcpyHostToDevice);
             }
             ping = !ping;
@@ -79,5 +80,5 @@ int main(int argc, char **argv) {
         free(r_h_array);
     }
 
-    MPI_Finalize();
+    MPI_CHECK(MPI_Finalize());
 }

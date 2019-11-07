@@ -6,85 +6,89 @@
 #include <vector>
 #include <string>
 
-#include "util.hpp"
+#include "util_cuda.hpp"
+#include "util_mpi.hpp"
 
-void computeG(){}
-
-void updateG4(){}
+#define MOD(x,n) ((x) % (n))
 
 int main(int argc, char **argv) {
-    MPI_Init(&argc, &argv);
+    MPI_CHECK(MPI_Init(&argc, &argv));
     int rank, mpi_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
+    MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
 
-    // each G2 say has 4 elements
-    int n_elems = 4;
-    float* G2;
-    // allocate a sequence of buffers for all G2s
-    std::vector<float*> G2s;
-    // G2 is currently empty
-    alloc_d(n_elems, &G2);
-    for(int i = 0; i<mpi_size; i++)
-    {
-        G2s.emplace_back(G2);
-    }
+    // sync all processors at the beginning
+    MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-    // generate G2 and fill some value in
-    computeG();
-
-    int flag = 0;
-    int tag = rank;
-    bool sent = false;
+    MPI_Request recv_request;
+    MPI_Request send_request;
     MPI_Status status;
-    MPI_Request request;
 
-    int iter = 0;
+    int left_neighbor = MOD((rank-1 + mpi_size), mpi_size);
+    int right_neighbor = MOD((rank+1 + mpi_size), mpi_size);
 
-    // do once at the beginning, sent local G2 to right neighbour
-    if (!sent) {
-        // each G2 is tagged with its birth rank
-        MPI_Isend(G2s[rank], n_elems, MPI_FLOAT, (rank + 1) % mpi_size, rank, MPI_COMM_WORLD, &request);
-        std::cout << "Rank " << rank << " sent its G2!" << "\n";
-        sent = true;
+    // number of G2s
+    int niter = 2;
+
+    size_t n_elems = 8388608; // 2 ^ 23
+    float* G2 = nullptr;
+    float* G4 = nullptr;
+    float* sendbuff_G2 = nullptr;
+    float* recvbuff_G2 = nullptr;
+
+    G2 = allocate_on_device<float>(n_elems);
+    G4 = allocate_on_device<float>(n_elems);
+    sendbuff_G2 = allocate_on_device<float>(n_elems);
+    recvbuff_G2 = allocate_on_device<float>(n_elems);
+
+    double start_time, end_time;
+    // sync all processors at the end
+    MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
+    if (rank == 0)
+    {
+        start_time = MPI_Wtime();
     }
+    for(int i = 0; i < niter; i++)
+    {
+        // generate G2 and fill some value in
+        generateG2(G2, rank, n_elems);
+        update_local_G4(G2, G4, rank, n_elems);
 
-    while(iter < mpi_size) {
-        // probe any available incoming G2
-        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+        // get ready for send
+        CudaMemoryCopy(sendbuff_G2, G2, n_elems);
+        int send_tag = 1 + rank;
+        send_tag = 1 + MOD(send_tag-1, MPI_TAG_UB); // just to be safe, MPI_TAG_UB is largest tag value
+        for(int icount=0; icount < (mpi_size-1); icount++)
+        {
+            // encode the originator rank in the message tag as tag = 1 + originator_irank
+            int originator_irank = MOD(((rank-1)-icount + 2*mpi_size), mpi_size);
+            int recv_tag = 1 + originator_irank;
+            recv_tag = 1 + MOD(recv_tag-1, MPI_TAG_UB); // just to be safe, then 1 <= tag <= MPI_TAG_UB
 
-        // we found one available G2 from left neighbor, let's place it into corresponding buffer position
-        if (flag) {
-            // birth rank (tag) <-> position of sequence buffer
-            MPI_Recv(G2s[status.MPI_TAG], n_elems, MPI_FLOAT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-            std::cout << "Rank " << rank << " received G2 [ " << status.MPI_TAG << " ] from rank " << status.MPI_SOURCE << "\n";
+            MPI_CHECK(MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, recv_tag, MPI_COMM_WORLD, &recv_request));
+            MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, send_tag, MPI_COMM_WORLD, &send_request));
 
-            flag = 0;
+            MPI_CHECK(MPI_Wait(&recv_request, &status));
+            CudaMemoryCopy(G2, recvbuff_G2, n_elems);
+            update_local_G4(G2, G4, rank, n_elems);
+            MPI_CHECK(MPI_Wait(&send_request, &status)); // wait for sendbuf_G2 to be available again
 
-            iter++;
-
-            if(status.MPI_TAG != rank)
-            {
-                std::cout << "Rank " << rank << " is sending G2 [ " << status.MPI_TAG << " ] to rank " << (rank + 1) % mpi_size << "\n";
-                // forward G2 to my right neighbor using non-blocking Isend
-                MPI_Isend(G2s[status.MPI_TAG], 1, MPI_FLOAT, (rank + 1) % mpi_size, status.MPI_TAG, MPI_COMM_WORLD, &request);
-            }
-            else
-            {
-                std::cout << "Rank " << rank << " will not send G2 [ " << status.MPI_TAG << " ] to anywhere! \n";
-                // this G2 was originally from me, it has travel around the ring and can be retired
-                // do nothing
-            }
+            // get ready for send
+            CudaMemoryCopy(sendbuff_G2, G2, n_elems);
+            send_tag = recv_tag;
         }
     }
 
-    for(int i = 0; i < mpi_size; i++)
+    if (rank == 0)
     {
-        // every G2 do your work to complete one cell of G4
-        updateG4(); // G2s[i];
+        end_time = MPI_Wtime();
+        printf("Total time spent on %d iteration: %lf \n", niter, (end_time - start_time));
+        printf("Number of ranks: %d, number of float elements %d \n", mpi_size, n_elems);
+        printf("Average time spent on 1 iteration: %lf \n", (end_time - start_time) / niter);
     }
 
-    // MPI gather to complete full final G4
+    // sync all processors at the end
+    MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-    MPI_Finalize();
+    MPI_CHECK(MPI_Finalize());
 }
