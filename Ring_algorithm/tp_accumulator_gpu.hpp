@@ -17,19 +17,22 @@ namespace accumulator {
 // dca::phys::solver::accumulator::
 
 template <typename ScalarType, class Allocator = dca::linalg::util::DeviceAllocator<ScalarType>>
-class TpAccumulator
+class TpAccumulator;
+
+template <typename ScalarType>
+class TpAccumulator<ScalarType>
 {
+private:
+    void computeGSingleband(int s);
 public:
     TpAccumulator()
     {
 //        std::cout << "I am constructed\n";
     }
 
-//    void computeGSingleband(int s);
-
     void computeG(float* G2, int rank, size_t n_elems)
     {
-//        computeGSingleband(0);
+        computeGSingleband(0);
         const int n_threads = 512;
         const int n_blocks = (n_elems + (n_threads-1))/ n_threads;
 //        __generateG2_in_kernel__<<<n_blocks,n_threads>>>(G2, rank, n_elems);
@@ -50,10 +53,20 @@ private:
     bool initialized_ = false;
 };
 
+template <typename ScalarType>
+void TpAccumulator<ScalarType>::computeGSingleband(const int s) {
+//    details::computeGSingleband(G_[s].ptr(), G_[s].leadingDimension(), get_G0()[s].ptr(),
+//                                KDmn::dmn_size(), n_pos_frqs_, beta_, streams_[s]);
+//    assert(cudaPeekAtLastError() == cudaSuccess);
+    std::cout << "hello \n";
+}
+
 }  // namespace accumulator
 }  // namespace solver
 }  // namespace phys
 }  // namespace dca
+
+
 
 
 // Prints an error message containing error, function_name, file_name, line and extra_error_string.
