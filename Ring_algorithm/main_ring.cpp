@@ -32,13 +32,14 @@ int main(int argc, char **argv) {
 
     size_t n_elems = 8388608; // 2 ^ 23
 
-    TpAccumulator<float> accumulator;
+    dca::phys::solver::accumulator::TpAccumulator<float> accumulator;
 
     float* G2 = nullptr;
     float* G4 = nullptr;
     float* sendbuff_G2 = nullptr;
     float* recvbuff_G2 = nullptr;
 
+    accumulator.computeG(G2, 1, n_elems);
 //    DeviceAllocator<float> G2_device;
 //    G2 = G2_device(n_elems);
 //    G4 = allocate_on_device<float>(n_elems);

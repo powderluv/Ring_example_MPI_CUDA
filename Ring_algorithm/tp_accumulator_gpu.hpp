@@ -2,47 +2,28 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#include <iostream>
 #include <string>
 #include <stdexcept>
 #include <array>
 
 #include "device_allocator.hpp"
+#include "reshapable_matrix.hpp"
 
-// Prints an error message containing error, function_name, file_name, line and extra_error_string.
-void printErrorMessage(std::string error, std::string function_name, std::string file_name,
-                       int line, std::string extra_error_string = "");
-
-void print_helper(float* G4, int index);
-
-template <typename ScalarType, class Allocator = dca::linalg::util::DeviceAllocator<ScalarType>>
-class ReshapableMatrix {
-public:
-    using ValueType = ScalarType;
-    using ThisType = ReshapableMatrix<ScalarType, Allocator>;
-    // Default contructor creates a matrix of zero size and capacity.
-    ReshapableMatrix() = default;
-    // Initializes a square size x size matrix.
-    ReshapableMatrix(int size);
-    // Initializes a square size.first x size.second matrix.
-    ReshapableMatrix(std::pair<int, int> size);
-private:
-    static std::size_t nextCapacity(std::size_t size);
-    inline static size_t nrElements(std::pair<int, int> size) {
-        return static_cast<size_t>(size.first) * static_cast<size_t>(size.second);
-    }
-
-    std::pair<int, int> size_ = std::make_pair(0, 0);
-    std::size_t capacity_ = 0;
-
-    ValueType* data_ = nullptr;
-};
+namespace dca {
+namespace phys {
+namespace solver {
+namespace accumulator {
+// dca::phys::solver::accumulator::
 
 template <typename ScalarType, class Allocator = dca::linalg::util::DeviceAllocator<ScalarType>>
 class TpAccumulator
 {
 public:
     TpAccumulator()
-    {}
+    {
+//        std::cout << "I am constructed\n";
+    }
 
 //    void computeGSingleband(int s);
 
@@ -63,11 +44,23 @@ public:
     }
 private:
     using RMatrix =
-    ReshapableMatrix<ScalarType, Allocator>;
+    dca::linalg::ReshapableMatrix<ScalarType>;
     std::array<RMatrix, 2> G_;
 
     bool initialized_ = false;
 };
+
+}  // namespace accumulator
+}  // namespace solver
+}  // namespace phys
+}  // namespace dca
+
+
+// Prints an error message containing error, function_name, file_name, line and extra_error_string.
+void printErrorMessage(std::string error, std::string function_name, std::string file_name,
+                       int line, std::string extra_error_string = "");
+
+void print_helper(float* G4, int index);
 
 template <typename T>
 void CudaMemoryCopy(T* dest, T* src, size_t size) {

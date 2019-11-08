@@ -5,12 +5,15 @@
 #ifndef MPI_CUDA_DEVICE_ALLOCATOR_HPP
 #define MPI_CUDA_DEVICE_ALLOCATOR_HPP
 
+#include "device_type.hpp"
+#include "error_cuda.hpp"
+
 namespace dca {
 namespace linalg {
 namespace util {
 // dca::linalg::util::
 
-template <typename T>
+template <typename T, DeviceType device_name = dca::linalg::GPU>
 class DeviceAllocator {
 protected:
     T* allocate(std::size_t n) {
