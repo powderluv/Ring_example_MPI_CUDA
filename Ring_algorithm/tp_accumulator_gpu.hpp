@@ -9,6 +9,7 @@
 
 #include "device_allocator.hpp"
 #include "reshapable_matrix.hpp"
+#include "kernels_interface.hpp"
 
 namespace dca {
 namespace phys {
@@ -30,11 +31,11 @@ public:
 //        std::cout << "I am constructed\n";
     }
 
-    void computeG(float* G2, int rank, size_t n_elems)
+    void computeG()
     {
         computeGSingleband(0);
-        const int n_threads = 512;
-        const int n_blocks = (n_elems + (n_threads-1))/ n_threads;
+//        const int n_threads = 512;
+//        const int n_blocks = (n_elems + (n_threads-1))/ n_threads;
 //        __generateG2_in_kernel__<<<n_blocks,n_threads>>>(G2, rank, n_elems);
         return;
     }
@@ -51,12 +52,12 @@ private:
     std::array<RMatrix, 2> G_;
 
     bool initialized_ = false;
+    std::array<cudaStream_t, 2> streams_;
 };
 
 template <typename ScalarType>
 void TpAccumulator<ScalarType>::computeGSingleband(const int s) {
-//    details::computeGSingleband(G_[s].ptr(), G_[s].leadingDimension(), get_G0()[s].ptr(),
-//                                KDmn::dmn_size(), n_pos_frqs_, beta_, streams_[s]);
+    dca::phys::solver::accumulator::details::computeGSingleband(G_[s].ptr(), streams_[s]);
 //    assert(cudaPeekAtLastError() == cudaSuccess);
     std::cout << "hello \n";
 }

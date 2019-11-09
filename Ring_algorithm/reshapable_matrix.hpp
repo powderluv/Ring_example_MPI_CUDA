@@ -158,10 +158,10 @@ void setAsync(const ReshapableMatrix<ScalarType, rhs_device_name>& rhs, int thre
 
 void setToZero(cudaStream_t stream);
 #else
-    // Synchronous assignment fallback for SetAsync.
-    template <DeviceType rhs_device_name>
-    void setAsync(const ReshapableMatrix<ScalarType, rhs_device_name>& rhs, int /*thread_id*/,
-                  int /*stream_id*/);
+// Synchronous assignment fallback for SetAsync.
+template <DeviceType rhs_device_name>
+void setAsync(const ReshapableMatrix<ScalarType, rhs_device_name>& rhs, int /*thread_id*/,
+              int /*stream_id*/);
 
 #endif  // DCA_HAVE_CUDA
 
