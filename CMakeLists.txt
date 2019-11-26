@@ -40,3 +40,5 @@ target_link_libraries(cuda_device_list ${CUDA_LIBRARIES})
 add_executable(G2_ring G2_ring.cpp)
 target_include_directories(G2_ring PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 target_link_libraries(G2_ring PRIVATE util)
+
+add_subdirectory(tests)
