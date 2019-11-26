@@ -53,13 +53,14 @@ private:
 
     bool initialized_ = false;
     std::array<cudaStream_t, 2> streams_;
+    static inline G0DevType& get_G0();
 };
 
 template <typename ScalarType>
 void TpAccumulator<ScalarType>::computeGSingleband(const int s) {
-    dca::phys::solver::accumulator::details::computeGSingleband(G_[s].ptr(), streams_[s]);
-//    assert(cudaPeekAtLastError() == cudaSuccess);
-    std::cout << "hello \n";
+//    dca::phys::solver::accumulator::details::computeGSingleband(G_[s].ptr(), G_[s].leadingDimension(), get_G0()[s].ptr(),
+//                                KDmn::dmn_size(), n_pos_frqs_, beta_, streams_[s]);
+    assert(cudaPeekAtLastError() == cudaSuccess);
 }
 
 }  // namespace accumulator

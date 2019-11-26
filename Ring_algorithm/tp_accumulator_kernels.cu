@@ -9,7 +9,7 @@
 //
 // Implements the GPU kernels used by the DFT algorithm.
 
-#include "dca/phys/dca_step/cluster_solver/shared_tools/accumulation/tp/kernels_interface.hpp"
+#include "kernels_interface.hpp"
 
 #include <array>
 #include <cassert>
@@ -93,8 +93,7 @@ __global__ void computeGSinglebandKernel(CudaComplex<Real>* __restrict__ G, int 
 }
 
 template <typename Real>
-void computeGSingleband(std::complex<Real>* G, int ldg, const std::complex<Real>* G0, int nk,
-                        int nw_pos, const Real beta, cudaStream_t stream) {
+void computeGSingleband(std::complex<Real>* G, int ldg, cudaStream_t stream) {
     const int n_rows = nk * nw_pos;
     auto blocks = getBlockSize(n_rows, n_rows * 2);
 
@@ -534,7 +533,7 @@ float updateG4(std::complex<Real>* G4, const std::complex<Real>* G_up, const int
 }
 
 // Explicit instantiation.
-template void computeGSingleband<float>(std::complex<float>* G, cudaStream_t stream);
+template void computeGSingleband<float>(std::complex<float>* G, int ldg, cudaStream_t stream);
 
 template void computeGSingleband<float>(std::complex<float>* G, int ldg,
                                         const std::complex<float>* G0, int nk, int nw,
