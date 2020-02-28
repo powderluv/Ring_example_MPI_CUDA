@@ -1,4 +1,4 @@
-#include "util.hpp"
+//#include "util.hpp"
 
 #include <chrono>
 #include <stdio.h>
@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "util_cuda.hpp"
 typedef std::chrono::high_resolution_clock Clock;
 
 __global__
