@@ -11,12 +11,22 @@
 #include "util_cuda.hpp"
 #include "util_mpi.hpp"
 
+#include "gptl.h"
 
 int main(int argc, char **argv) {
+    int ret;
+//  ret = GPTLsetutr(GPTLnanotime);
+//  ret =GPTLsetoption (GPTLoverhead, 0);
+//  ret =GPTLsetoption (GPTLpercent, 0);
+//  ret =GPTLsetoption (GPTLabort_on_error, 1);
+//  ret =GPTLsetoption (GPTLsync_mpi, 1);
     MPI_CHECK(MPI_Init(&argc, &argv));
     int rank, mpi_size;
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
     MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
+  ret = GPTLinitialize();
+    
+
     if (mpi_size != 2) {
         std::cout << "Run with two ranks.";
         MPI_CHECK(MPI_Abort(MPI_COMM_WORLD, -1));
@@ -64,5 +74,7 @@ int main(int argc, char **argv) {
         free_d(r_array);
     }
 
+    ret = GPTLpr (rank);
+    ret = GPTLpr_file("summary.txt");
     MPI_CHECK(MPI_Finalize());
 }

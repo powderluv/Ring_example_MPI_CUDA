@@ -9,10 +9,16 @@
 #include "util_cuda.hpp"
 #include "util_mpi.hpp"
 
+#include "gptl.h"
+
 #define MOD(x,n) ((x) % (n))
 
 int main(int argc, char **argv) {
     MPI_CHECK(MPI_Init(&argc, &argv));
+
+    int ret;
+    ret = GPTLinitialize();
+
     int rank, mpi_size;
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
     MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
@@ -89,6 +95,10 @@ int main(int argc, char **argv) {
 
     // sync all processors at the end
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
+
+
+    std::string outfile(std::to_string(rank) + "summary.txt");
+    ret = GPTLpr_file(outfile.data());
 
     MPI_CHECK(MPI_Finalize());
 }
