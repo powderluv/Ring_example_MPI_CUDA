@@ -1,4 +1,3 @@
-#include "util.hpp"
 
 #include <chrono>
 #include <stdio.h>

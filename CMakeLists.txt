@@ -40,3 +40,8 @@ target_link_libraries(cuda_device_list ${CUDA_LIBRARIES})
 add_executable(G2_ring G2_ring.cpp util_mpi.hpp)
 target_include_directories(G2_ring PRIVATE ${CUDA_TOOLKIT_INCLUDE})
 target_link_libraries(G2_ring PRIVATE util_cuda)
+
+add_executable(threads_mpi threads_mpi.cpp util_mpi.hpp)
+target_include_directories(threads_mpi PRIVATE ${CUDA_TOOLKIT_INCLUDE})
+target_link_libraries(threads_mpi PRIVATE util_cuda)
+

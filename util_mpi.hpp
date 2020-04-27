@@ -6,6 +6,7 @@
 #define MPI_CUDA_UTIL_MPI_HPP
 
 #include <cassert>
+#include "mpi.h"
 
 #define MPI_CHECK(stmt)                                          \
 do {                                                             \
