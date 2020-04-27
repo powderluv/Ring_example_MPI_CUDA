@@ -9,9 +9,10 @@
 #include "util_cuda.hpp"
 #include "util_mpi.hpp"
 
+#include <hpx/mpi.hpp>
 #include <hpx/hpx_main.hpp>
 #include <hpx/include/iostreams.hpp>
-#include <hpx/mpi.hpp>
+#include <hpx/mpi/mpi_future.hpp>
 #include <hpx/lcos/future.hpp>
 
 #define MOD(x,n) ((x) % (n))
@@ -22,8 +23,8 @@ int main(int argc, char **argv) {
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
     MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
 
-    hpx::mpi::enable_user_polling enable_polling;
-    hpx::mpi::executor exec(MPI_COMM_WORLD);
+    hpx::mpi::experimental::enable_user_polling enable_polling;
+    hpx::mpi::experimental::executor exec(MPI_COMM_WORLD);
 
     // sync all processors at the beginning
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
@@ -73,8 +74,8 @@ int main(int argc, char **argv) {
             int recv_tag = 1 + originator_irank;
             recv_tag = 1 + MOD(recv_tag-1, MPI_TAG_UB); // just to be safe, then 1 <= tag <= MPI_TAG_UB
 
-            hpx::future<int> f_send = hpx::async(exec, MPI_Irecv, recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, recv_tag);
-            hpx::future<int> f_recv = hpx::async(exec, MPI_Isend, sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, send_tag);
+            auto f_send = hpx::mpi::experimental::detail::async(MPI_Irecv, recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, recv_tag, MPI_COMM_WORLD);
+            auto f_recv = hpx::mpi::experimental::detail::async(MPI_Isend, sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, send_tag, MPI_COMM_WORLD);
 
             f_recv.get(); 
             CudaMemoryCopy(G2, recvbuff_G2, n_elems);
