@@ -9,11 +9,13 @@
 #include "util_cuda.hpp"
 #include "util_mpi.hpp"
 
-#include <hpx/mpi.hpp>
 #include <hpx/hpx_main.hpp>
-#include <hpx/include/iostreams.hpp>
-#include <hpx/mpi/mpi_future.hpp>
+#include <hpx/async.hpp>
+#include <hpx/execution.hpp>
 #include <hpx/lcos/future.hpp>
+#include <hpx/local_async.hpp>
+#include <hpx/mpi.hpp>
+#include <hpx/program_options.hpp>
 
 #define MOD(x,n) ((x) % (n))
 

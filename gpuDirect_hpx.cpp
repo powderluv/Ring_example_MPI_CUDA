@@ -27,8 +27,8 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-hpx::mpi::enable_user_polling enable_polling;
-hpx::mpi::executor exec(MPI_COMM_WORLD);
+hpx::mpi::experimental::enable_user_polling enable_polling;
+hpx::mpi::experimental::executor exec(MPI_COMM_WORLD);
 
     const int times = 100;
 
