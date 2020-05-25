@@ -12,7 +12,11 @@
 #define MOD(x,n) ((x) % (n))
 
 int main(int argc, char **argv) {
-    MPI_CHECK(MPI_Init(&argc, &argv));
+    int provided = 0;
+    constexpr int required = MPI_THREAD_FUNNELED;
+    MPI_Init_thread(&argc, &argv, required, &provided);
+    if (provided < required)
+        throw(std::logic_error("MPI does not provide adequate thread support."));
     int rank, mpi_size;
     MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
     MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
