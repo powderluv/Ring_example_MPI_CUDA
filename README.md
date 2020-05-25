@@ -14,6 +14,8 @@ bash-4.2$ jsrun -r1 -c7 -a 1 -n 2 -g 1 --smpiargs="-gpu" ./cvdlauncher.sh ./gpuD
 
 ### Two GPUs Same Node Same NUMA Domain
 ```
+bash-4.2$ cd build
+bash-4.2$ cp ../cvdlauncher.sh .
 bash-4.2$ jsrun -r 2 -c 7 -a 1 -n 2 -g 1 --smpiargs="-gpu" ./cvdlauncher.sh ./gpuDirect
 ```
 
