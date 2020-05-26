@@ -19,6 +19,28 @@
 
 #define MOD(x,n) ((x) % (n))
 
+hpx::future<void> perform_one_communication_step(const int left_neighbor, const int right_neighbor, const int rank,
+		float* G2, float* sendbuff_G2, float* recvbuff_G2, float* G4, size_t  n_elems, hpx::mpi::experimental::executor& exec)
+{
+            auto f_send = hpx::async(exec, MPI_Irecv, recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, 10);
+            auto f_recv = hpx::async(exec, MPI_Isend, sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, 10);
+
+         // auto f1 = hpx::dataflow(hpx::launch::async, [&](auto&& f_recv) {	
+	      f_recv.get();
+              CudaMemoryCopy(G2, recvbuff_G2, n_elems);
+              update_local_G4(G2, G4, rank, n_elems);
+	 //  }, f_recv);
+            
+
+	 // return hpx::dataflow(hpx::launch::async, [&](auto&& f1, auto&& f_send) { 
+	 //   f1.get();
+            f_send.get();
+            // get ready for send
+            CudaMemoryCopy(sendbuff_G2, G2, n_elems);
+	 //  }, f1, f_send);
+	   return hpx::make_ready_future();
+}
+
 int main(int argc, char **argv) {
   int is_initialized_ = -1;
   MPI_Initialized(&is_initialized_);
@@ -49,7 +71,7 @@ int main(int argc, char **argv) {
     int right_neighbor = MOD((rank+1 + mpi_size), mpi_size);
 
     // number of G2s
-    int niter = 1000;
+    int niter = 10000;
 
     size_t n_elems = 26214400; // 2 ^ 23
     float* G2 = nullptr;
@@ -77,34 +99,15 @@ int main(int argc, char **argv) {
 
         // get ready for send
         CudaMemoryCopy(sendbuff_G2, G2, n_elems);
-        int send_tag = 1 + rank;
-        send_tag = 1 + MOD(send_tag-1, MPI_TAG_UB); // just to be safe, MPI_TAG_UB is largest tag value
+
+	hpx::future<void> it = hpx::make_ready_future();
+
         for(int icount=0; icount < (mpi_size-1); icount++)
         {
-            // encode the originator rank in the message tag as tag = 1 + originator_irank
-            int originator_irank = MOD(((rank-1)-icount + 2*mpi_size), mpi_size);
-            int recv_tag = 1 + originator_irank;
-            recv_tag = 1 + MOD(recv_tag-1, MPI_TAG_UB); // just to be safe, then 1 <= tag <= MPI_TAG_UB
 
-            auto f_send = hpx::async(exec, MPI_Irecv, recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, 10);
-            auto f_recv = hpx::async(exec, MPI_Isend, sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, 10);
-
-            auto f1 = hpx::dataflow(hpx::launch::async, [&](auto&& f_recv) {	
-	      f_recv.get();
-              CudaMemoryCopy(G2, recvbuff_G2, n_elems);
-              update_local_G4(G2, G4, rank, n_elems);
-	    }, f_recv);
-            
-
-	   auto f2 = hpx::dataflow(hpx::launch::async, [&](auto&& f1, auto&& f_send) { 
-	    f1.get();
-            f_send.get();
-            // get ready for send
-            CudaMemoryCopy(sendbuff_G2, G2, n_elems);
-            send_tag = recv_tag;
-	   }, f1, f_send);
-
-	   f2.get();
+          it = perform_one_communication_step(left_neighbor, right_neighbor, rank, 
+						G2, sendbuff_G2, recvbuff_G2, G4, n_elems, exec);
+          it.get();
         }
     }
 
