@@ -32,9 +32,9 @@ int main(int argc, char **argv) {
     int right_neighbor = MOD((rank+1 + mpi_size), mpi_size);
 
     // number of G2s
-    int niter = 2;
+    int niter = 1000;
 
-    size_t n_elems = 8388608; // 2 ^ 23
+    size_t n_elems = 26214400; 
     float* G2 = nullptr;
     float* G4 = nullptr;
     float* sendbuff_G2 = nullptr;
@@ -69,8 +69,8 @@ int main(int argc, char **argv) {
             int recv_tag = 1 + originator_irank;
             recv_tag = 1 + MOD(recv_tag-1, MPI_TAG_UB); // just to be safe, then 1 <= tag <= MPI_TAG_UB
 
-            MPI_CHECK(MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, recv_tag, MPI_COMM_WORLD, &recv_request));
-            MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, send_tag, MPI_COMM_WORLD, &send_request));
+            MPI_CHECK(MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, 10, MPI_COMM_WORLD, &recv_request));
+            MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, 10, MPI_COMM_WORLD, &send_request));
 
             MPI_CHECK(MPI_Wait(&recv_request, &status));
             CudaMemoryCopy(G2, recvbuff_G2, n_elems);
