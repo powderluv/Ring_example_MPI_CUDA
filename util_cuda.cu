@@ -58,11 +58,11 @@ void __update_local_G4_in_kernel__ (float* G2, float* G4, int rank, size_t n_ele
         G4[index] += G2[index];
     }
 
-   // int64_t cycles = 0;
-   // int64_t start = clock64();
-   // while(cycles < 100000) {
-   //     cycles = clock64() - start;
-   // }
+    int64_t cycles = 0;
+    int64_t start = clock64();
+    while(cycles < 1000000) {
+        cycles = clock64() - start;
+    }
 }
 
 void generateG2(float* G2, int rank, size_t n_elems)
