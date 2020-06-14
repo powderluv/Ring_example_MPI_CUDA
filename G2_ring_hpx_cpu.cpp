@@ -1,0 +1,154 @@
+#include <vector>
+#include "mpi.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <vector>
+#include <string>
+
+//#include "util_cuda.hpp"
+#include "util_mpi.hpp"
+
+#include <hpx/hpx_main.hpp>
+#include <hpx/async.hpp>
+#include <hpx/execution.hpp>
+#include <hpx/lcos/future.hpp>
+#include <hpx/local_async.hpp>
+#include <hpx/mpi.hpp>
+#include <hpx/program_options.hpp>
+
+#define MOD(x,n) ((x) % (n))
+
+hpx::future<void> perform_one_communication_step(const int left_neighbor, const int right_neighbor, const int rank,
+		float* G2, float* sendbuff_G2, float* recvbuff_G2, float* G4, size_t  n_elems, hpx::mpi::experimental::executor& exec, int thread_id)
+{
+//    auto f_send = hpx::async(exec, MPI_Irecv, recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, thread_id);
+//    auto f_recv = hpx::async(exec, MPI_Isend, sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, thread_id);
+
+    auto f_send = hpx::make_ready_future();
+    auto f_recv = hpx::make_ready_future();
+    auto f1 = hpx::dataflow(hpx::launch::async, [&](auto&& f_recv) {
+      f_recv.get();
+        memcpy(G2, recvbuff_G2, n_elems * sizeof(float));
+//      update_local_G4(G2, G4, rank, n_elems);
+    }, f_recv);
+
+    return hpx::dataflow(hpx::launch::async, [&](auto&& f1, auto&& f_send) {
+        f1.get();
+        f_send.get();
+        // get ready for send
+        memcpy(sendbuff_G2, G2, n_elems * sizeof(float));
+    }, f1, f_send);
+//	   return hpx::make_ready_future();
+}
+
+void task(size_t n_elems, int niter, int thread_id) {
+    int rank, mpi_size;
+    MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
+    MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
+
+    hpx::mpi::experimental::executor exec(MPI_COMM_WORLD);
+
+    // sync all processors at the beginning
+    MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
+
+    MPI_Request recv_request;
+    MPI_Request send_request;
+    MPI_Status status;
+
+    int left_neighbor = MOD((rank-1 + mpi_size), mpi_size);
+    int right_neighbor = MOD((rank+1 + mpi_size), mpi_size);
+
+    float* G2 = nullptr;
+    float* G4 = nullptr;
+    float* sendbuff_G2 = nullptr;
+    float* recvbuff_G2 = nullptr;
+
+    G2 = (float*) malloc (n_elems * sizeof(float));
+    G4 = (float*) malloc (n_elems * sizeof(float));
+    sendbuff_G2 = (float*) malloc (n_elems * sizeof(float));
+    recvbuff_G2 = (float*) malloc (n_elems * sizeof(float));
+
+    for(int i = 0; i < n_elems; i++)
+    {
+        G2[i] = 42.0;
+        G4[i] = 42.0;
+        sendbuff_G2[i] = 42.0;
+        recvbuff_G2[i] = 42.0;
+    }
+
+    for(int i = 0; i < niter; i++)
+    {
+        // generate G2 and fill some value in
+//        generateG2(G2, rank, n_elems);
+//        update_local_G4(G2, G4, rank, n_elems);
+
+        // get ready for send
+        memcpy(sendbuff_G2, G2, n_elems * sizeof(float));
+
+        hpx::future<void> it = hpx::make_ready_future();
+
+        for(int icount=0; icount < (mpi_size-1); icount++)
+        {
+            it = perform_one_communication_step(left_neighbor, right_neighbor, rank,
+                                                G2, sendbuff_G2, recvbuff_G2, G4, n_elems, exec, thread_id);
+            it.get();
+        }
+    }
+}
+
+int main(int argc, char **argv) {
+    int is_initialized_ = -1;
+    MPI_Initialized(&is_initialized_);
+    if (!is_initialized_)
+    {
+    int provided = 0;
+    constexpr int required = MPI_THREAD_FUNNELED;
+    MPI_Init_thread(&argc, &argv, required, &provided);
+    if (provided < required)
+        throw(std::logic_error("MPI does not provide adequate thread support."));
+    }
+
+    int rank, mpi_size;
+    MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &mpi_size));
+    MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
+
+    double start_time, end_time;
+
+    size_t n_elems = 26214400; // 2 ^ 23
+    int niter = 10;
+
+    MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
+    if (rank == 0)
+    {
+        start_time = MPI_Wtime();
+    }
+
+    // start thread pool
+    hpx::mpi::experimental::enable_user_polling enable_polling;
+    std::vector<hpx::future<void> > pool;
+
+    for(int thread_id = 0; thread_id < 7; thread_id++)
+    {
+        pool.emplace_back(hpx::async(task, n_elems, niter, thread_id));
+    }
+
+    for(auto& t: pool)
+    {
+        t.get();
+    }
+    // end thread pool
+
+    if (rank == 0)
+    {
+        end_time = MPI_Wtime();
+        printf("Total time spent on %d iteration: %lf \n", niter, (end_time - start_time));
+        printf("Number of ranks: %d, number of float elements %d \n", mpi_size, n_elems);
+        printf("Average time spent on 1 iteration: %lf \n", (end_time - start_time) / niter);
+    }
+
+    // sync all processors at the end
+    MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
+
+    MPI_CHECK(MPI_Finalize());
+}
