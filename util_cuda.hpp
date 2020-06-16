@@ -1,6 +1,8 @@
 #pragma once
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <string>
+#include <stdexcept>
 
 extern "C" void alloc_d(long long N, float** buff);
 

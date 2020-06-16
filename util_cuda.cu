@@ -1,4 +1,4 @@
-#include "util.hpp"
+#include "util_cuda.hpp"
 
 #include <chrono>
 #include <stdio.h>
