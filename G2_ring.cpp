@@ -34,14 +34,13 @@ int main(int argc, char **argv) {
     // number of G2s
     int niter = 100;
 
-    size_t n_elems = 8388608; // 2 ^ 23
+    size_t n_elems = 8388608;
     float* G2 = nullptr;
     float* G4 = nullptr;
     float* sendbuff_G2 = nullptr;
     float* recvbuff_G2 = nullptr;
 
     G2 = allocate_on_device<float>(n_elems);
-//    G4 = allocate_on_device<float>(n_elems);
     sendbuff_G2 = allocate_on_device<float>(n_elems);
     recvbuff_G2 = allocate_on_device<float>(n_elems);
 
@@ -54,29 +53,13 @@ int main(int argc, char **argv) {
     }
     for(int i = 0; i < niter; i++)
     {
-        // generate G2 and fill some value in
-//        generateG2(G2, rank, n_elems);
-//        update_local_G4(G2, G4, rank, n_elems);
-
-        // get ready for send
-//        CudaMemoryCopy(sendbuff_G2, G2, n_elems);
         for(int icount=0; icount < (mpi_size-1); icount++)
         {
-            // intentionally delay rank 0
-            if(rank == 0)
-                std::this_thread::sleep_for(2s);
-
             MPI_CHECK(MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, 1, MPI_COMM_WORLD, &recv_request));
             MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, 1, MPI_COMM_WORLD, &send_request));
 
             MPI_CHECK(MPI_Wait(&recv_request, &status));
-//            CudaMemoryCopy(G2, recvbuff_G2, n_elems);
-//            update_local_G4(G2, G4, rank, n_elems);
-            MPI_CHECK(MPI_Wait(&send_request, &status)); // wait for sendbuf_G2 to be available again
-
-            // get ready for send
-//            CudaMemoryCopy(sendbuff_G2, G2, n_elems);
-//            send_tag = recv_tag;
+            MPI_CHECK(MPI_Wait(&send_request, &status));
         }
     }
 
