@@ -24,16 +24,19 @@ int main(int argc, char **argv) {
     // sync all processors at the beginning
     MPI_CHECK(MPI_Barrier(MPI_COMM_WORLD));
 
-    MPI_Request recv_request;
-    MPI_Request send_request;
-    MPI_Status status;
+    MPI_Request recv_request_1;
+    MPI_Request recv_request_2;
+    MPI_Request send_request_1;
+    MPI_Request send_request_2;
+    MPI_Status status_1;
+    MPI_Status status_2;
 
     int left_neighbor = MOD((rank-1 + mpi_size), mpi_size);
     int right_neighbor = MOD((rank+1 + mpi_size), mpi_size);
-    const bool is_even = rank % 2;
+    const bool is_even = (rank % 2) == 0;
 
     // number of G2s
-    int niter = 1000;
+    int niter = 4000;
 
     size_t n_elems = 8388608;
 
@@ -45,18 +48,24 @@ int main(int argc, char **argv) {
 
     float* G2 = nullptr;
     float* G4 = nullptr;
-    float* sendbuff_G2 = nullptr;
-    float* recvbuff_G2 = nullptr;
+    float* sendbuff_G2_1 = nullptr;
+    float* recvbuff_G2_1 = nullptr;
+    float* sendbuff_G2_2 = nullptr;
+    float* recvbuff_G2_2 = nullptr;
 
     cudaMalloc((void**)&G2, n_elems * sizeof(float));
     cudaMalloc((void**)&G4, n_elems * sizeof(float));
-    cudaMalloc((void**)&sendbuff_G2, n_elems * sizeof(float));
-    cudaMalloc((void**)&recvbuff_G2, n_elems * sizeof(float));
+    cudaMalloc((void**)&sendbuff_G2_1, n_elems * sizeof(float));
+    cudaMalloc((void**)&sendbuff_G2_2, n_elems * sizeof(float));
+    cudaMalloc((void**)&recvbuff_G2_1, n_elems * sizeof(float));
+    cudaMalloc((void**)&recvbuff_G2_2, n_elems * sizeof(float));
 
     cudaMemcpy(G2, G2_h, n_elems * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(G4, G2_h, n_elems * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(sendbuff_G2, G2_h, n_elems * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(recvbuff_G2, G2_h, n_elems * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(sendbuff_G2_1, G2_h, n_elems * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(sendbuff_G2_2, G2_h, n_elems * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(recvbuff_G2_1, G2_h, n_elems * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(recvbuff_G2_2, G2_h, n_elems * sizeof(float), cudaMemcpyHostToDevice);
 
     double start_time, end_time;
     // sync all processors at the end
@@ -69,18 +78,18 @@ int main(int argc, char **argv) {
     {
         for(int icount=0; icount < (mpi_size-1); icount++)
         {
-            if(is_even) {
-                MPI_CHECK(MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, 1, MPI_COMM_WORLD, &recv_request));
-                MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, 1, MPI_COMM_WORLD, &send_request));
-            }
-            else
-            {
-                MPI_CHECK(MPI_Isend(sendbuff_G2, n_elems, MPI_FLOAT, right_neighbor, 1, MPI_COMM_WORLD, &send_request));
-                MPI_CHECK(MPI_Irecv(recvbuff_G2, n_elems, MPI_FLOAT, left_neighbor, 1, MPI_COMM_WORLD, &recv_request));
-            }
+            MPI_CHECK(MPI_Isend(sendbuff_G2_1, n_elems, MPI_FLOAT, right_neighbor, 2, MPI_COMM_WORLD, &send_request_1));
+            MPI_CHECK(MPI_Isend(sendbuff_G2_2, n_elems, MPI_FLOAT, left_neighbor, 1, MPI_COMM_WORLD, &send_request_2));
 
-            MPI_CHECK(MPI_Wait(&recv_request, &status));
-            MPI_CHECK(MPI_Wait(&send_request, &status));
+            MPI_CHECK(MPI_Irecv(recvbuff_G2_1, n_elems, MPI_FLOAT, left_neighbor, 2, MPI_COMM_WORLD, &recv_request_1));
+            MPI_CHECK(MPI_Irecv(recvbuff_G2_2, n_elems, MPI_FLOAT, right_neighbor, 1, MPI_COMM_WORLD, &recv_request_2));
+
+            MPI_CHECK(MPI_Wait(&recv_request_1, &status_1));
+            MPI_CHECK(MPI_Wait(&recv_request_2, &status_2));
+
+            MPI_CHECK(MPI_Wait(&send_request_1, &status_1));
+            MPI_CHECK(MPI_Wait(&send_request_2, &status_2));
+
         }
     }
 
