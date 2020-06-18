@@ -1,5 +1,14 @@
 # Ring_example_MPI_CUDA
 
+### How to use
+```
+git clone git@github.com:weilewei/Ring_example_MPI_CUDA.git
+cd Ring_example_MPI_CUDA
+mkdir build && cd build
+make -j4
+cp ../cvdlauncher.sh .
+```
+
 ### Two nodes GPUDirect RDMA Striping enabled across two HCAs
 ```
 bash-4.2$ ml cuda
